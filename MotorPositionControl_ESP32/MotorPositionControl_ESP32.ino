@@ -27,6 +27,7 @@
 #define CONTROL_ISR_FREQUENCY_HZ (1000000.0f/CONTROL_ISR_PERIOD_US)
 
 #define COMMS_UPDATE_FREQ_HZ (100.0f)
+#define COMMS_ISR_TICKS_THRESHOLD (CONTROL_ISR_FREQUENCY_HZ/COMMS_UPDATE_FREQ_HZ)
 
 // 7 HZ Low pass filter constant
 #define SENSING_LPF_CUTOFF_HZ (50.0f)
@@ -51,7 +52,7 @@ volatile uint8_t isr_tick = 0U;
 volatile uint8_t comms_tick = 0U;
 
 // Divides the isr clock for tasks that can run slower
-uint16_t isr_comms_divider = 0U;
+volatile uint16_t isr_comms_divider = 0U;
 
 /****************************************************************************************
  *                               I S R   C A L L B A C K S                      
@@ -63,12 +64,13 @@ void IRAM_ATTR sampling_isr() {
 
   // Update the comms tick once the divider counter reaches the intended frequency
   isr_comms_divider++;
-  if(isr_comms_divider == CONTROL_ISR_FREQUENCY_HZ/COMMS_UPDATE_FREQ_HZ)
+  //if(isr_comms_divider == COMMS_ISR_TICKS_THRESHOLD) //TODO
+  if(isr_comms_divider == 5)
   {
     // Set the comms tick
     comms_tick = 1U;
     
-    isr_comms_divider = 0;
+    isr_comms_divider = 0U;
   }
 }
 
@@ -130,7 +132,7 @@ void loop()
     motor_controller_state.current_command = position_controller(&motor_sensing_vars, motor_controller_state.position_reference);
     
     // 3. Send the actual command to the actuator
-    motor_controller_handler_set_current(motor_controller_state.current_command);
+    motor_controller_handler_set_current(-1.0f*motor_controller_state.current_command);
     //motor_controller_handler_set_current(-200);
     
     isr_tick = 0U;
@@ -143,9 +145,9 @@ void loop()
     motor_controller_state.position_reference = 180.0f;
     
     // Data for serial plotter
-    //Serial.print(motor_sensing_vars.motor_angle_filtered);
+    Serial.println(motor_sensing_vars.motor_angle_filtered);
     //Serial.print(" ");
-    Serial.println(motor_sensing_vars.motor_speed_filtered);
+    //Serial.println(motor_sensing_vars.motor_speed_filtered);
     //Serial.print(" ");
     //Serial.println(dt);
 

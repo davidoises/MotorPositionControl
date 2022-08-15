@@ -62,10 +62,33 @@ void encoder_sensing_start_bus()
 
 float encoder_sensing_get_angle()
 {
+  // Used to keep track of absolute angle
+  static float previousAngle = 0.0f;
+  static float final_angle = 0.0f;
+
   const uint16_t raw_angle = encoder_sensing_read_raw_angle_UI16();
 
   // Get the original measured angle in degrees
   const float angle = raw_angle * ANGLE_RESOLUTION_DEG_PER_BIT;
 
-  return angle;
+  // Need to keep track fo the angle difference each iteration
+  // The following logic deals with jumps between 0 and 360 degrees
+  float updated_angle = angle;
+  if ( previousAngle > 340 && angle < 20 )
+  {
+    updated_angle = angle + 360.0f;
+  }
+  else if ( angle > 340 && previousAngle < 20 )
+  {
+    updated_angle = angle - 360.0f; 
+  }
+
+  // To generate an absolute angle we add the angle difference to a state variable
+  // i.e. we integrate the difference
+  const float angle_difference = updated_angle - previousAngle;
+  final_angle += angle_difference;
+
+  previousAngle = angle;
+
+  return final_angle;
 }
