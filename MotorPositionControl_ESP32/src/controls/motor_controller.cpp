@@ -14,7 +14,8 @@
 #define POSITION_CONTROLLER_KD (0.01f)
 
 #define POSITION_CONTROLLER_MAX_CURRENT_COMMAND_mA (5000.0f)
-#define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_mA (50.0f)
+#define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_STATIC_FRICTION_mA (100.0f) //50.0 works great
+#define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_DYNAMIC_FRICTION_mA (50.0f) //50.0 works great
 
 /****************************************************************************************
  *                               P R I V A T E   F U N C T I O N S                 
@@ -30,7 +31,7 @@ float position_controller(const struct motor_sensing_vars_S* sensing_vars, const
     float motor_current_command = 0.0f;
 
     // Error
-    const float error = position_reference - sensing_vars->motor_angle;
+    const float error = position_reference - sensing_vars->motor_angle_filtered;
 
     // Proportional term calculation
     const float p_term = error * POSITION_CONTROLLER_KP;
@@ -47,9 +48,19 @@ float position_controller(const struct motor_sensing_vars_S* sensing_vars, const
     // PI combination
     const float control_law = constrain(p_term + i_term + d_term, -POSITION_CONTROLLER_MAX_CURRENT_COMMAND_mA, POSITION_CONTROLLER_MAX_CURRENT_COMMAND_mA);
 
+    // Dinamic deadzone
+    static float prev_command = 0.0f;
+
+    float min_command = POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_STATIC_FRICTION_mA;
+    if ((prev_command * control_law > 0.0f) && (sensing_vars->motor_speed_filtered > 10.0f)) // If signs remain the smae and already moving
+    {
+        min_command = POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_DYNAMIC_FRICTION_mA;
+    }
+    //min_command = POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_DYNAMIC_FRICTION_mA;
+
     // Adjust the output command with a linear mapping to account for motor controller deadzone
     // converts from a var in range [A, B] to a new range [C, D]
-    const float mapped_control = map(abs(control_law), 0.0f, POSITION_CONTROLLER_MAX_CURRENT_COMMAND_mA, POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_mA, POSITION_CONTROLLER_MAX_CURRENT_COMMAND_mA);
+    const float mapped_control = map(abs(control_law), 0.0f, POSITION_CONTROLLER_MAX_CURRENT_COMMAND_mA, min_command, POSITION_CONTROLLER_MAX_CURRENT_COMMAND_mA);
     if(control_law < 0.0f)
     {
         motor_current_command = -1.0f*mapped_control;
