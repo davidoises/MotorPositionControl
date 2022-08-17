@@ -10,8 +10,8 @@
  *                                       D E F I N E S
  ****************************************************************************************/
 
-#define ENCODER_CHANNEL_A_PIN 4  
-#define ENCODER_CHANNEL_B_PIN 2
+#define ENCODER_CHANNEL_A_PIN 13  
+#define ENCODER_CHANNEL_B_PIN 15
 
 #define ANGLE_FULL_SCALE_DEG (360.0f)
 #define ANGLE_DATA_LENGTH_BITS (12)
@@ -87,4 +87,16 @@ float encoder_sensing_get_angle()
   const float angle = counter * ANGLE_RESOLUTION_DEG_PER_BIT;
 
   return angle;
+}
+
+float encoder_sensing_get_speed(const float time_step)
+{
+  static int32_t previous_count = 0U;
+
+  const int32_t counter_diff = counter - previous_count;
+  previous_count = counter;
+
+  const float speed = counter_diff * ANGLE_RESOLUTION_DEG_PER_BIT / time_step;
+
+  return speed;
 }

@@ -15,10 +15,19 @@
 void encoder_sensing_start();
 
 /**
- * @brief      Gets the raw angle from the SPI sensor.
+ * @brief      Gets the angle based on the encoder counts
  *
- * @return     Encoder angle in degrees in range of [0, 360]
+ * @return     Encoder angle in degrees in range of [-inf, inf]
  */
 float encoder_sensing_get_angle();
+
+/**
+ * @brief      Gets the speed based on the encoder counts within a give time step
+ *
+ * @param[in]  time_step  The time step between measurements
+ *
+ * @return     Encoder angular speed in deg/s
+ */
+float encoder_sensing_get_speed(const float time_step);
 
 #endif //ENCODER_SENSING_HEADER

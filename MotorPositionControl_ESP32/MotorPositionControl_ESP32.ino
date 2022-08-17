@@ -35,6 +35,8 @@
 
 #define CONVERSION_RPM_TO_DEGPS (360.0f/60.0f)
 
+#define USE_ENCODER_SPEED_MEASUREMENT 1
+
 /****************************************************************************************
  *                              G L O B A L   V A R I A B L E S
  ****************************************************************************************/
@@ -96,7 +98,7 @@ void setup()
   // Initializes motor controller
   motor_controller_handler_init();
 
-  delay(2000);
+  delay(3000);
 
   // Set sampling trigger to CONTROL_ISR_PERIOD_US microseconds
   isr_tick = 0;
@@ -122,7 +124,12 @@ void loop()
     
     // 1. Gather sensgin variables
     motor_sensing_vars.motor_angle = encoder_sensing_get_angle();
-    motor_sensing_vars.motor_speed = motor_controller_handler_get_speed() * -CONVERSION_RPM_TO_DEGPS; // Getting speed in Deg/s
+    
+    #if USE_ENCODER_SPEED_MEASUREMENT
+    motor_sensing_vars.motor_speed = encoder_sensing_get_speed(1.0f/CONTROL_ISR_FREQUENCY_HZ); // Getting speed in Deg/s
+    #else
+    motor_sensing_vars.motor_speed = motor_controller_handler_get_speed() * CONVERSION_RPM_TO_DEGPS; // Getting speed in Deg/s
+    #endif
     
     // Low pass filter mesurements from sensors
     motor_sensing_vars.motor_angle_filtered = (1.0f-SENSING_LPF_ALPHA) * motor_sensing_vars.motor_angle_filtered + SENSING_LPF_ALPHA * motor_sensing_vars.motor_angle;
@@ -132,8 +139,7 @@ void loop()
     motor_controller_state.current_command = position_controller(&motor_sensing_vars, motor_controller_state.position_reference);
     
     // 3. Send the actual command to the actuator
-    //motor_controller_handler_set_current(-1.0f*motor_controller_state.current_command);
-    //motor_controller_handler_set_current(-200);
+    motor_controller_handler_set_current(motor_controller_state.current_command);
     
     isr_tick = 0U;
   }
@@ -142,12 +148,13 @@ void loop()
   if (comms_tick)
   {
     // Updating the position reference here
-    motor_controller_state.position_reference = 180.0f;
+    //motor_controller_state.position_reference = 180.0f;
+    motor_controller_state.position_reference = 500.0f;
+    motor_controller_state.position_reference = 10000.0f;
     
     // Data for serial plotter
-    Serial.println(motor_sensing_vars.motor_angle);//_filtered);
-    //Serial.print(" ");
-    //Serial.println(motor_sensing_vars.motor_speed_filtered);
+    //Serial.println(motor_sensing_vars.motor_angle);//_filtered);
+    Serial.println(motor_sensing_vars.motor_speed_filtered);
     //Serial.print(" ");
     //Serial.println(dt);
 
