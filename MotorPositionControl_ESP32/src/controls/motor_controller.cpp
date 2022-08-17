@@ -9,12 +9,12 @@
  *                                       D E F I N E S
  ****************************************************************************************/
 
-#define POSITION_CONTROLLER_KP (0.1f)
+#define POSITION_CONTROLLER_KP (3.0f)
 #define POSITION_CONTROLLER_KI (0.000001f * 500.0f)
-#define POSITION_CONTROLLER_KD (0.0f)
+#define POSITION_CONTROLLER_KD (0.01f)
 
 #define POSITION_CONTROLLER_MAX_CURRENT_COMMAND_mA (5000.0f)
-#define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_mA (0.0f)//(50.0f)
+#define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_mA (50.0f)
 
 /****************************************************************************************
  *                               P R I V A T E   F U N C T I O N S                 
@@ -30,7 +30,7 @@ float position_controller(const struct motor_sensing_vars_S* sensing_vars, const
     float motor_current_command = 0.0f;
 
     // Error
-    const float error = position_reference - sensing_vars->motor_speed_filtered;
+    const float error = position_reference - sensing_vars->motor_angle;
 
     // Proportional term calculation
     const float p_term = error * POSITION_CONTROLLER_KP;

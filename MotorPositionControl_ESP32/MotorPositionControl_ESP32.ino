@@ -148,13 +148,11 @@ void loop()
   if (comms_tick)
   {
     // Updating the position reference here
-    //motor_controller_state.position_reference = 180.0f;
-    motor_controller_state.position_reference = 500.0f;
-    motor_controller_state.position_reference = 10000.0f;
+    motor_controller_state.position_reference = 180.0f;
     
     // Data for serial plotter
-    //Serial.println(motor_sensing_vars.motor_angle);//_filtered);
-    Serial.println(motor_sensing_vars.motor_speed_filtered);
+    Serial.println(motor_sensing_vars.motor_angle);//_filtered);
+    //Serial.println(motor_sensing_vars.motor_speed_filtered);
     //Serial.print(" ");
     //Serial.println(dt);
 
