@@ -10,9 +10,9 @@
  ****************************************************************************************/
 
 /**
- * @brief      Starts the SPI bus for sensor communication
+ * @brief      Attaches interrupts and starts ISR for encoder AB inputs
  */
-void encoder_sensing_start_bus();
+void encoder_sensing_start();
 
 /**
  * @brief      Gets the raw angle from the SPI sensor.

@@ -10,85 +10,81 @@
  *                                       D E F I N E S
  ****************************************************************************************/
 
-#define SPI_BUS_FREQUENCY_HZ (8000000)
+#define ENCODER_CHANNEL_A_PIN 4  
+#define ENCODER_CHANNEL_B_PIN 2
 
 #define ANGLE_FULL_SCALE_DEG (360.0f)
-#define ANGLE_DATA_LENGTH_BITS (16)
+#define ANGLE_DATA_LENGTH_BITS (12)
 #define ANGLE_RESOLUTION_DEG_PER_BIT ( ANGLE_FULL_SCALE_DEG/((float)(2<<(ANGLE_DATA_LENGTH_BITS-1)) ) )
 
 /****************************************************************************************
  *                       P R I V A T E   D A T A   D E F I N I T I O N S
  ****************************************************************************************/
 
-// SPI bus objects
-SPISettings SPI_bus_config = SPISettings(SPI_BUS_FREQUENCY_HZ, MSBFIRST, SPI_MODE0);
-SPIClass* encoder_sensor_SPI_handle = new SPIClass(VSPI);
+static volatile int32_t counter = 0U;
 
 /****************************************************************************************
  *                               P R I V A T E   F U N C T I O N S                 
  ****************************************************************************************/
 
-/**
- * @brief      Reads the uint16 raw angle from the encoder sensor through SPI
- *
- * @return     Raw uint16 encoder angle
- */
-static uint16_t encoder_sensing_read_raw_angle_UI16()
+static void IRAM_ATTR encoder_sensing_process_interrupts()
 {
-  // Start SPI transmission. Uses the SPI settings object for correct mode operation
-  digitalWrite(SS, LOW);
-  encoder_sensor_SPI_handle->beginTransaction(SPI_bus_config);
+  static uint8_t previous_state = 0U;
+  uint8_t state = 0U;
 
-  // Read 16-bit unsigned angle
-  const uint16_t angle = encoder_sensor_SPI_handle->transfer16(0x0000);
+  const uint8_t A = digitalRead(ENCODER_CHANNEL_A_PIN);
+  const uint8_t B = digitalRead(ENCODER_CHANNEL_B_PIN);
 
-  // End SPI transmission
-  encoder_sensor_SPI_handle->endTransaction();
-  digitalWrite(SS, HIGH);
+  if ((A==HIGH)&&(B==HIGH)) state = 1;
+  if ((A==HIGH)&&(B==LOW)) state = 2;
+  if ((A==LOW)&&(B==LOW)) state = 3;
+  if((A==LOW)&&(B==HIGH)) state = 4;
 
-  return angle;
+  switch (state)
+  {
+    case 1:
+    {
+      if (previous_state == 2) counter++;
+      if (previous_state == 4) counter--;
+      break;
+    }
+    case 2:
+    {
+      if (previous_state == 1) counter--;
+      if (previous_state == 3) counter++;
+      break;
+    }
+    case 3:
+    {
+      if (previous_state == 2) counter--;
+      if (previous_state == 4) counter++;
+      break;
+    }
+    default:
+    {
+      if (previous_state == 1) counter++;
+      if (previous_state == 3) counter--;
+    }
+  }
+
+  previous_state = state;
 }
 
 /****************************************************************************************
  *                                  P U B L I C   F U N C T I O N S
  ****************************************************************************************/
 
-void encoder_sensing_start_bus()
+void encoder_sensing_start()
 {
-  // Starts the SPI bus
-  encoder_sensor_SPI_handle->begin();
-  pinMode(SS, OUTPUT);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_CHANNEL_A_PIN), encoder_sensing_process_interrupts, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ENCODER_CHANNEL_B_PIN), encoder_sensing_process_interrupts, CHANGE);
 }
 
 float encoder_sensing_get_angle()
 {
-  // Used to keep track of absolute angle
-  static float previousAngle = 0.0f;
-  static float final_angle = 0.0f;
-
-  const uint16_t raw_angle = encoder_sensing_read_raw_angle_UI16();
 
   // Get the original measured angle in degrees
-  const float angle = raw_angle * ANGLE_RESOLUTION_DEG_PER_BIT;
+  const float angle = counter * ANGLE_RESOLUTION_DEG_PER_BIT;
 
-  // Need to keep track fo the angle difference each iteration
-  // The following logic deals with jumps between 0 and 360 degrees
-  float updated_angle = angle;
-  if ( previousAngle > 340 && angle < 20 )
-  {
-    updated_angle = angle + 360.0f;
-  }
-  else if ( angle > 340 && previousAngle < 20 )
-  {
-    updated_angle = angle - 360.0f; 
-  }
-
-  // To generate an absolute angle we add the angle difference to a state variable
-  // i.e. we integrate the difference
-  const float angle_difference = updated_angle - previousAngle;
-  final_angle += angle_difference;
-
-  previousAngle = angle;
-
-  return final_angle;
+  return angle;
 }

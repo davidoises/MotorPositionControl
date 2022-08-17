@@ -90,8 +90,8 @@ void setup()
   // Print some warning for the user
   Serial.println("Starting program in 2 second");
 
-  // Initialize SPI bus for pendulum angle sensor
-  encoder_sensing_start_bus();
+  // Init IST for encoder AB input processing
+  encoder_sensing_start();
 
   // Initializes motor controller
   motor_controller_handler_init();
@@ -132,7 +132,7 @@ void loop()
     motor_controller_state.current_command = position_controller(&motor_sensing_vars, motor_controller_state.position_reference);
     
     // 3. Send the actual command to the actuator
-    motor_controller_handler_set_current(-1.0f*motor_controller_state.current_command);
+    //motor_controller_handler_set_current(-1.0f*motor_controller_state.current_command);
     //motor_controller_handler_set_current(-200);
     
     isr_tick = 0U;
@@ -145,7 +145,7 @@ void loop()
     motor_controller_state.position_reference = 180.0f;
     
     // Data for serial plotter
-    Serial.println(motor_sensing_vars.motor_angle_filtered);
+    Serial.println(motor_sensing_vars.motor_angle);//_filtered);
     //Serial.print(" ");
     //Serial.println(motor_sensing_vars.motor_speed_filtered);
     //Serial.print(" ");
