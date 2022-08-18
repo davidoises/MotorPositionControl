@@ -13,8 +13,8 @@
 #define POSITION_CONTROLLER_KI (0.000001f * 500.0f)
 #define POSITION_CONTROLLER_KD (0.01f)
 
-#define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_STATIC_FRICTION_mA (240.0f)
-#define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_DYNAMIC_FRICTION_mA (90.0f)
+#define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_STATIC_FRICTION_mA (200.0f)
+#define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_DYNAMIC_FRICTION_mA (80.0f)
 
 /****************************************************************************************
  *                               P R I V A T E   F U N C T I O N S                 
@@ -47,27 +47,37 @@ float position_controller(const struct motor_sensing_vars_S* sensing_vars, const
     // PI combination
     const float control_law = constrain(p_term + i_term + d_term, -POSITION_CONTROLLER_MAX_CURRENT_COMMAND_mA, POSITION_CONTROLLER_MAX_CURRENT_COMMAND_mA);
 
-    // Dinamic deadzone
+    
+
+    //// Next steps from here are attempts to reduce oscillations and steady state error due to friction/deadzones
+
+    // Determnie the minimum current command based on frctions effects
+    // Trying to follow some high stiction level and low dynamic friction based on testing
     static float prev_command = 0.0f;
+    float min_command = POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_DYNAMIC_FRICTION_mA;
+    if (abs(sensing_vars->motor_speed_filtered) < 300.0f || (prev_command * control_law) < 0.0f)
+    {
+        min_command = POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_STATIC_FRICTION_mA;
+    }
 
-    float min_command = POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_STATIC_FRICTION_mA;
-    if ((prev_command * control_law > 0.0f) && (sensing_vars->motor_speed_filtered > 10.0f)) // If signs remain the smae and already moving
+    // Adjust command to follow min command based on friction
+    motor_current_command = max(abs(control_law), min_command);
+    if (control_law < 0.0f)
     {
-        min_command = POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_DYNAMIC_FRICTION_mA;
+        motor_current_command *= -1.0f;
     }
-    min_command = POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_DYNAMIC_FRICTION_mA;
 
-    // Adjust the output command with a linear mapping to account for motor controller deadzone
-    // converts from a var in range [A, B] to a new range [C, D]
-    const float mapped_control = map(abs(control_law), 0.0f, POSITION_CONTROLLER_MAX_CURRENT_COMMAND_mA, min_command, POSITION_CONTROLLER_MAX_CURRENT_COMMAND_mA);
-    if(control_law < 0.0f)
+    // deadband control
+    if (abs(control_law) < 60.0f)
     {
-        motor_current_command = -1.0f*mapped_control;
+        motor_current_command = 0.0f;
     }
-    else
-    {
-        motor_current_command = mapped_control;
-    }
+
+    prev_command = motor_current_command;
+
+    // Serial.print(control_law);
+    // Serial.print(" ");
+    // Serial.println(motor_current_command);
 
     return motor_current_command;
 }
