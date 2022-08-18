@@ -77,6 +77,12 @@ void IRAM_ATTR sampling_isr() {
 }
 
 /****************************************************************************************
+ *                P R I V A T E   F U N C T I O N   D E C L A R A T I O N S                  
+ ****************************************************************************************/
+
+String process_serial_commands();
+
+/****************************************************************************************
  *                        A R D U I N O   B A S E   F U N C T I O N S                  
  ****************************************************************************************/
 
@@ -146,16 +152,85 @@ void loop()
 
   // Code running at COMMs rate
   if (comms_tick)
-  {
-    // Updating the position reference here
-    motor_controller_state.position_reference = 180.0f;
-    
+  {    
     // Data for serial plotter
+    Serial.print(motor_controller_state.position_reference);
+    Serial.print(" ");
     Serial.println(motor_sensing_vars.motor_angle);//_filtered);
+    
+    //Serial.print(motor_controller_state.current_command);
+    //Serial.print(" ");
     //Serial.println(motor_sensing_vars.motor_speed_filtered);
+    
     //Serial.print(" ");
     //Serial.println(dt);
 
+    // Command parsing
+    process_serial_commands();
+    
     comms_tick = 0U;
   }
+}
+
+/****************************************************************************************
+ *                               P R I V A T E   F U N C T I O N S                 
+ ****************************************************************************************/
+
+String process_serial_commands()
+{
+  // a string to hold incoming data
+  static String received_chars;
+  String command = "";
+
+  while (Serial.available()) {
+    // get the new byte:
+    char inChar = (char)Serial.read();
+    
+    // end of user input
+    if (inChar == '\n') {
+      // execute the user command
+      command = received_chars;
+      
+      // Setting the current
+      if(command.indexOf("current:") == 0 &&  command.length() > 8)
+      {
+        int user_current = constrain(command.substring(8).toInt(), -POSITION_CONTROLLER_MAX_CURRENT_COMMAND_mA, POSITION_CONTROLLER_MAX_CURRENT_COMMAND_mA);
+        
+        //motor_controller_state.current_command = user_current;
+      }
+
+      // Setting the position reference
+      //if(command.indexOf("position:") == 0 &&  command.length() > 9)
+      if(command.indexOf("p:") == 0 &&  command.length() > 2)
+      {
+        int user_position = command.substring(2).toInt();
+        
+        motor_controller_state.position_reference = user_position;
+      }
+      
+      if(command.indexOf("enable") == 0)
+      {
+        // Example of other commands
+      }
+
+      if(command.indexOf("disable") == 0)
+      {
+        // Example of other commands
+      }
+      
+      if(command.indexOf("run") == 0)
+      {
+        // Example of other commands
+      }
+      
+      // reset the command buffer 
+      received_chars = "";
+    }
+    else
+    {
+      // add it to the string buffer:
+      received_chars += inChar;
+    }
+  }
+  return command;
 }

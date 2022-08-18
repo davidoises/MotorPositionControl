@@ -13,9 +13,8 @@
 #define POSITION_CONTROLLER_KI (0.000001f * 500.0f)
 #define POSITION_CONTROLLER_KD (0.01f)
 
-#define POSITION_CONTROLLER_MAX_CURRENT_COMMAND_mA (5000.0f)
-#define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_STATIC_FRICTION_mA (100.0f) //50.0 works great
-#define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_DYNAMIC_FRICTION_mA (50.0f) //50.0 works great
+#define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_STATIC_FRICTION_mA (240.0f)
+#define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_DYNAMIC_FRICTION_mA (90.0f)
 
 /****************************************************************************************
  *                               P R I V A T E   F U N C T I O N S                 
@@ -56,7 +55,7 @@ float position_controller(const struct motor_sensing_vars_S* sensing_vars, const
     {
         min_command = POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_DYNAMIC_FRICTION_mA;
     }
-    //min_command = POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_DYNAMIC_FRICTION_mA;
+    min_command = POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_DYNAMIC_FRICTION_mA;
 
     // Adjust the output command with a linear mapping to account for motor controller deadzone
     // converts from a var in range [A, B] to a new range [C, D]
