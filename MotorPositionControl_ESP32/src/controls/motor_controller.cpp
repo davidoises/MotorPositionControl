@@ -13,8 +13,9 @@
 #define POSITION_CONTROLLER_KI (30e-6f * 500.0f) //20.0f // 4.375e-6 - 2.1875e-6
 #define POSITION_CONTROLLER_KD (0.25f) //0.1//0.1 - 0.01
 
-#define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_STATIC_FRICTION_mA (200.0f)
+#define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_STATIC_FRICTION_mA (200.0f) //200
 #define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_DYNAMIC_FRICTION_mA (80.0f)
+#define POSITION_CONTROLLER_CURRENT_COMMAND_STATIC_DEADZONE_THRESHOLD_SPEED_DEGPERS (100.0f) //300.0f
 
 /****************************************************************************************
  *                               P R I V A T E   F U N C T I O N S                 
@@ -55,7 +56,7 @@ float position_controller(const struct motor_sensing_vars_S* sensing_vars, const
     // Trying to follow some high stiction level and low dynamic friction based on testing
     static float prev_command = 0.0f;
     float min_command = POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_DYNAMIC_FRICTION_mA;
-    if (abs(sensing_vars->motor_speed_filtered) < 300.0f || (prev_command * control_law) < 0.0f)
+    if (abs(sensing_vars->motor_speed_filtered) < POSITION_CONTROLLER_CURRENT_COMMAND_STATIC_DEADZONE_THRESHOLD_SPEED_DEGPERS || (prev_command * control_law) < 0.0f)
     {
         min_command = POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_STATIC_FRICTION_mA;
     }
