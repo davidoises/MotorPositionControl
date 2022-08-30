@@ -26,12 +26,12 @@
 // Conversion factor for motor speed to bits
 #define SPEED_FULL_SCALE_RPM (5461.0f)
 #define SPEED_DATA_LENGTH_BITS (14)
-#define SPEED_RESOLUTION_RPM_PER_BIT ( SPEED_FULL_SCALE_RPM/((float)(2<<(SPEED_DATA_LENGTH_BITS-1)) ) )
+#define SPEED_RESOLUTION_RPM_PER_BIT ( SPEED_FULL_SCALE_RPM/((float)((1<<SPEED_DATA_LENGTH_BITS)-1)) ) 
 
 // Conversion factor for current command to bits
 #define CURRENT_FULL_SCALE_mA (5000.0f)
 #define CURRENT_DATA_LENGTH_BITS (14)
-#define CURRENT_RESOLUTION_mA_PER_BIT ( CURRENT_FULL_SCALE_mA/( (float)(2<<(CURRENT_DATA_LENGTH_BITS-1)) ) )
+#define CURRENT_RESOLUTION_mA_PER_BIT ( CURRENT_FULL_SCALE_mA/((float)((1<<CURRENT_DATA_LENGTH_BITS)-1)) )
 
 /****************************************************************************************
  *                                  P U B L I C   F U N C T I O N S

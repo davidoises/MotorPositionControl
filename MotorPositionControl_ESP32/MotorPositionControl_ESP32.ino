@@ -96,7 +96,7 @@ void setup()
   while(Serial.available() == 0) {}
 
   // Print some warning for the user
-  Serial.println("Starting program in 2 second");
+  Serial.println("Starting program in 3 second");
 
   // Init IST for encoder AB input processing
   encoder_sensing_start();
@@ -156,7 +156,7 @@ void loop()
     // Data for serial plotter
     Serial.print(motor_controller_state.position_reference);
     Serial.print(" ");
-    Serial.println(motor_sensing_vars.motor_angle);//_filtered);
+    Serial.println(motor_sensing_vars.motor_angle_filtered);
     
     //Serial.print(motor_controller_state.current_command);
     //Serial.print(" ");
