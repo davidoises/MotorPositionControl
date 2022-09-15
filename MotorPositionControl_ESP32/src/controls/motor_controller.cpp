@@ -10,7 +10,7 @@
  ****************************************************************************************/
 
 #define POSITION_CONTROLLER_KP (10.95f) //3.9125 1.95
-#define POSITION_CONTROLLER_KI (30e-6f * 500.0f) //20.0f // 4.375e-6 - 2.1875e-6
+#define POSITION_CONTROLLER_KI (7.5f * 0.002f) 
 #define POSITION_CONTROLLER_KD (0.25f) //0.1//0.1 - 0.01
 
 #define POSITION_CONTROLLER_CURRENT_COMMAND_DEADZONE_STATIC_FRICTION_mA (200.0f) //200
