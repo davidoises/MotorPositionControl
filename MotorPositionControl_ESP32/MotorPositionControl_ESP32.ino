@@ -124,6 +124,15 @@ void loop()
     uint32_t currentT = micros();
     float dt = (currentT - previousT);
     previousT = currentT;
+
+    static float wt = 0.0f;
+    //wt += (2.0f*PI*10.0f)*(1.0f/COMMS_UPDATE_FREQ_HZ);
+    wt += (2.0f*PI*1.0f)*(1.0f/CONTROL_ISR_FREQUENCY_HZ);
+    if (wt > 2*PI)
+    {
+      wt -= 2*PI;
+    }
+    motor_controller_state.position_reference = 500.0f * cos(wt);
     
     // Controls code was to slow to run directly in the ISR so moved to main loop
     // The slowliness is due to the UART communication for the motor controller.
@@ -152,11 +161,14 @@ void loop()
 
   // Code running at COMMs rate
   if (comms_tick)
-  {    
+  {
+
+    
+        
     // Data for serial plotter
-    Serial.print(motor_controller_state.position_reference);
-    Serial.print(" ");
-    Serial.println(motor_sensing_vars.motor_angle_filtered);
+//    Serial.print(motor_controller_state.position_reference);
+//    Serial.print(" ");
+//    Serial.println(motor_sensing_vars.motor_angle_filtered);
     
     //Serial.print(motor_controller_state.current_command);
     //Serial.print(" ");
@@ -165,8 +177,14 @@ void loop()
     //Serial.print(" ");
     //Serial.println(dt);
 
+    Serial.print(motor_controller_state.position_reference);
+    Serial.print(" ");
+    Serial.print(motor_controller_state.current_command);
+    Serial.print(" ");
+    Serial.println(motor_sensing_vars.motor_speed_filtered);
+
     // Command parsing
-    process_serial_commands();
+    //process_serial_commands();
     
     comms_tick = 0U;
   }
