@@ -33,6 +33,9 @@
 #define SENSING_LPF_CUTOFF_HZ (50.0f)
 #define SENSING_LPF_ALPHA (1.0f / (1.0f + CONTROL_ISR_FREQUENCY_HZ*(1.0f/(2*PI*SENSING_LPF_CUTOFF_HZ))))
 
+#define PRINTING_LPF_CUTOFF_HZ (0.2f)
+#define PRINTING_LPF_ALPHA (1.0f / (1.0f + CONTROL_ISR_FREQUENCY_HZ*(1.0f/(2*PI*PRINTING_LPF_CUTOFF_HZ))))
+
 #define CONVERSION_RPM_TO_DEGPS (360.0f/60.0f)
 
 #define USE_ENCODER_SPEED_MEASUREMENT 1
@@ -127,12 +130,12 @@ void loop()
 
     static float wt = 0.0f;
     //wt += (2.0f*PI*10.0f)*(1.0f/COMMS_UPDATE_FREQ_HZ);
-    wt += (2.0f*PI*1.0f)*(1.0f/CONTROL_ISR_FREQUENCY_HZ);
+    wt += (2.0f*PI*0.1f)*(1.0f/CONTROL_ISR_FREQUENCY_HZ);
     if (wt > 2*PI)
     {
       wt -= 2*PI;
     }
-    motor_controller_state.position_reference = 500.0f * cos(wt);
+    motor_controller_state.position_reference = 20.0f * cos(wt);
     
     // Controls code was to slow to run directly in the ISR so moved to main loop
     // The slowliness is due to the UART communication for the motor controller.
@@ -149,6 +152,7 @@ void loop()
     // Low pass filter mesurements from sensors
     motor_sensing_vars.motor_angle_filtered = (1.0f-SENSING_LPF_ALPHA) * motor_sensing_vars.motor_angle_filtered + SENSING_LPF_ALPHA * motor_sensing_vars.motor_angle;
     motor_sensing_vars.motor_speed_filtered = (1.0f-SENSING_LPF_ALPHA) * motor_sensing_vars.motor_speed_filtered + SENSING_LPF_ALPHA * motor_sensing_vars.motor_speed;
+    motor_sensing_vars.motor_speed_super_filtered = (1.0f-PRINTING_LPF_ALPHA) * motor_sensing_vars.motor_speed_super_filtered + PRINTING_LPF_ALPHA * motor_sensing_vars.motor_speed;
     
     // 2. Run the control loops
     motor_controller_state.current_command = position_controller(&motor_sensing_vars, motor_controller_state.position_reference);
@@ -181,7 +185,7 @@ void loop()
     Serial.print(" ");
     Serial.print(motor_controller_state.current_command);
     Serial.print(" ");
-    Serial.println(motor_sensing_vars.motor_speed_filtered);
+    Serial.println(motor_sensing_vars.motor_speed_super_filtered);
 
     // Command parsing
     //process_serial_commands();

@@ -29,6 +29,7 @@ struct motor_sensing_vars_S
   // Low pass filtered version of the measurements
   float motor_angle_filtered;
   float motor_speed_filtered;
+  float motor_speed_super_filtered;
 };
 
 /****************************************************************************************
